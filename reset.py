@@ -16,7 +16,7 @@ requestURL = "http://localhost:8040"
 data =  {}
 logging.basicConfig(level=logging.INFO)
 
-
+## Cleans ATCFW API objects
 def cleanATCFWAPI(feature):
     storeList = []
     getResponse = requests.get(requestURL+"/api/atcfw/v1/"+feature, headers = headers)
@@ -48,9 +48,6 @@ def cleanATCFWAPI(feature):
 
         elif feature == "network_lists":
             storeList.append(items["ids"])
-#
-#         elif feature == "redirect_page":
-#             storeList.append(items["ids"])
 
         elif feature == "security_policies":
             if items["is_default"] == "false":
@@ -63,7 +60,7 @@ def cleanATCFWAPI(feature):
     if not response.ok:
         logging.error("Failed to delete %s ", feature)
 
-
+## Cleans BloxOne Endpoints objects
 def cleanATCEPAPI(feature):
     storeList = []
     getResponse = requests.get(requestURL+"/api/atcep/v1/"+feature, headers = headers)
@@ -91,6 +88,7 @@ def cleanATCEPAPI(feature):
     if not response.ok:
         logging.error("Failed to delete the %s ", feature)
 
+## Cleans Onprem hosts objects
 def cleanOnPremHosts(feature):
     storeList = []
     getResponse = requests.get(requestURL+"/api/host_app/v1/"+feature, headers = headers)
@@ -114,6 +112,7 @@ def cleanOnPremHosts(feature):
         if not response.ok:
             logging.error("Failed to delete %s : %d", feature, id)
 
+## Cleans Anycast feature objects
 def cleanAnycast(feature):
     storeList = []
     getResponse = requests.get(requestURL+"/api/anycast/v1/accm"+feature, headers = headers)
