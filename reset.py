@@ -138,6 +138,90 @@ def cleanAnycast(feature):
             logging.error("Failed to delete Anycast Config %d", id)
 
 
+def cleanJoinTokens():
+        storeList = []
+        getResponse = requests.get(requestURL + "atlas-host-activation/v1/jointoken", headers=headers)
+        if not getResponse.ok:
+            return
+        response = json.loads(getResponse.text)
+        if response.get("results"):
+            if len(response["results"]) == 0:
+                return
+        logging.info(getResponse.text)
+
+        for items in response["results"]:
+            id = items["id"].split("/")
+            storeList.append(id[2])
+
+        data["id"] = storeList
+        logging.info("Deleting the Ids %s", data["id"])
+
+        for id in storeList:
+            response = requests.delete(requestURL, "atlas-host-activation/v1/jointoken/"+id, headers = headers)
+            if not response.ok:
+                logging.error("Failed to delete the JoinToken %s", id)
+
+
+def cleanCDCFlow(feature):
+    storeList = []
+    getResponse = requests.get(requestURL+"/api/cdc-flow/v1/display"+feature, headers = headers)
+    if not getResponse.ok :
+        return
+    response = json.loads(getResponse.text)
+    if response.get("results" ):
+        if len(response["results"]) == 0:
+            return
+    response = json.loads(getResponse.text)
+    logging.info(getResponse.text)
+    print(getResponse.text)
+
+    for items in response["results"]:
+        if feature == "sources":
+            storeList.append(items["ids"])
+        if feature == "destinations":
+            storeList.append(items["ids"])
+        if feature == "flows":
+            storeList.append(items["ids"])
+        if feature == "etl/filters":
+            storeList.append(items["ids"])
+
+
+    logging.info("Deleting id %d for %s", len(storeList), feature)
+    for id in storeList:
+        response = requests.delete(requestURL + "/api/cdc-flow/v1/display"+feature/id, headers = headers)
+        if not response.ok:
+            logging.error("Failed to delete %s with %d", feature, id)
+
+
+## Cleans BloxOne Endpoints objects
+def cleanNotifications(feature):
+    ## feature = user_alerts, account_alerts
+    storeList = []
+    getResponse = requests.get(requestURL+"/atlas-notifications-mailbox/v1/"+feature, headers = headers)
+    if not getResponse.ok :
+        return
+    response = json.loads(getResponse.text)
+    if response.get("results" ):
+        if len(response["results"]) == 0:
+            return
+    response = json.loads(getResponse.text)
+    logging.info(getResponse.text)
+
+    for items in response["results"]:
+        if feature == "account_alerts":
+                storeList.append(items["ids"])
+
+        elif feature == "user_alerts":
+            storeList.append(items["id"])
+
+    data["ids"] = storeList
+    logging.info("Deleting the Ids %s", data["ids"])
+
+    response = requests.delete( requestURL + "/atlas-notifications-mailbox/v1/"+feature, headers=headers, data=json.dumps(data))
+    if not response.ok:
+        logging.error("Failed to delete the %s ", feature)
+
+
 def main():
     if __name__ == "__main__":
         ## Add more features if necessary
