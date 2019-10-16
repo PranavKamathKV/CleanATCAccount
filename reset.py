@@ -137,7 +137,7 @@ def cleanAnycast(feature):
         if not response.ok:
             logging.error("Failed to delete Anycast Config %d", id)
 
-
+# Cleans JOIN Tokens
 def cleanJoinTokens():
         storeList = []
         getResponse = requests.get(requestURL + "atlas-host-activation/v1/jointoken", headers=headers)
@@ -162,6 +162,7 @@ def cleanJoinTokens():
                 logging.error("Failed to delete the JoinToken %s", id)
 
 
+# Cleans CDC Flow
 def cleanCDCFlow(feature):
     storeList = []
     getResponse = requests.get(requestURL+"/api/cdc-flow/v1/display"+feature, headers = headers)
@@ -193,7 +194,7 @@ def cleanCDCFlow(feature):
             logging.error("Failed to delete %s with %d", feature, id)
 
 
-## Cleans BloxOne Endpoints objects
+## Cleans Notifications
 def cleanNotifications(feature):
     ## feature = user_alerts, account_alerts
     storeList = []
@@ -229,6 +230,8 @@ def main():
         atcepFeatures = ["roaming_device_groups", "roaming_devices"]
         onPremFeatures = ["on_prem_hosts", "update_configs"]
         anycastFeatures = ["ac_configs"]
+        notificationFeatures = ["user_alerts", "account_alerts"]
+        cdcFlowFeatures = ["sources","destinations", "flows", "etl/filters"]
 
         for item in atcepFeatures:
             cleanATCEPAPI(item)
@@ -239,7 +242,15 @@ def main():
         for item in atcfwFeatures:
             cleanATCFWAPI(item)
 
+        cleanJoinTokens()
+
         for item in anycastFeatures:
             cleanAnycast(item)
+
+        for item in cdcFlowFeatures:
+            cleanCDCFlow(item)
+
+        for item in notificationFeatures:
+            cleanNotifications(item)
 
 main()
