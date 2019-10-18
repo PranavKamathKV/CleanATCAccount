@@ -79,14 +79,31 @@ def cleanATCEPAPI(feature):
                 storeList.append(items["ids"])
 
         elif feature == "roaming_devices":
-            storeList.append(items["id"])
+            storeList.append(items["client_id"])
 
     data["ids"] = storeList
     logging.info("Deleting the Ids %s", data["ids"])
 
-    response = requests.delete( requestURL + "/api/atcep/v1/"+feature, headers=headers, data=json.dumps(data))
-    if not response.ok:
-        logging.error("Failed to delete the %s ", feature)
+    if feature == "roaming_devices":
+        putData = {}
+        putData["client_ids"] = storeList
+        putData["administrative_status"] = "DISABLED"
+        response = requests.put(requestURL + "/api/atcep/v1/"+feature, headers = headers, data = json.dumps(putData))
+        if not response.ok:
+            logging.error("Failed to disable roaming device")
+            return
+
+        putData["administrative_status"] = "DELETED"
+
+        response = requests.put(requestURL + "/api/atcep/v1/" + feature, headers=headers, data=json.dumps(putData))
+        if not response.ok:
+            logging.error("Failed to delete roaming device")
+            return
+
+    elif feature == "roaming_device_groupgs":
+        response = requests.delete( requestURL + "/api/atcep/v1/"+feature, headers=headers, data=json.dumps(data))
+        if not response.ok:
+            logging.error("Failed to delete the %s ", feature)
 
 ## Cleans Onprem hosts objects
 def cleanOnPremHosts(feature):
@@ -140,7 +157,7 @@ def cleanAnycast(feature):
 # Cleans JOIN Tokens
 def cleanJoinTokens():
         storeList = []
-        getResponse = requests.get(requestURL + "atlas-host-activation/v1/jointoken", headers=headers)
+        getResponse = requests.get(requestURL + "/atlas-host-activation/v1/jointoken", headers=headers)
         if not getResponse.ok:
             return
         response = json.loads(getResponse.text)
@@ -157,7 +174,7 @@ def cleanJoinTokens():
         logging.info("Deleting the Ids %s", data["id"])
 
         for id in storeList:
-            response = requests.delete(requestURL, "atlas-host-activation/v1/jointoken/"+id, headers = headers)
+            response = requests.delete(requestURL +"/atlas-host-activation/v1/jointoken/"+id, headers = headers)
             if not response.ok:
                 logging.error("Failed to delete the JoinToken %s", id)
 
@@ -223,6 +240,29 @@ def cleanNotifications(feature):
         logging.error("Failed to delete the %s ", feature)
 
 
+# Cleans CDC Flow
+def cleanAtlasTags():
+    storeList = []
+    getResponse = requests.get(requestURL+"/api/atlas-tagging/v2/tags", headers = headers)
+    if not getResponse.ok :
+        return
+    response = json.loads(getResponse.text)
+    if response.get("results" ):
+        if len(response["results"]) == 0:
+            return
+    response = json.loads(getResponse.text)
+    logging.info(getResponse.text)
+
+    for items in response["results"]:
+            storeList.append(items["id"])
+
+
+    logging.info("Deleting ids %d for tags", len(storeList))
+    for id in storeList:
+        response = requests.delete(requestURL + "/api/atlas-tagging/v2/tags", headers = headers, data=json.dumps(data))
+        if not response.ok:
+            logging.error("Failed to delete tag with %d",id)
+
 def main():
     if __name__ == "__main__":
         ## Add more features if necessary
@@ -252,5 +292,7 @@ def main():
 
         for item in notificationFeatures:
             cleanNotifications(item)
+
+        cleanAtlasTags()
 
 main()
