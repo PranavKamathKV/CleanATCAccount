@@ -195,7 +195,6 @@ def cleanCDCFlow(feature, requestURL, headers):
         if feature == "etl/filters":
             storeList.append(items["ids"])
 
-
     logging.info("Deleting id %d for %s", len(storeList), feature)
     for id in storeList:
         response = requests.delete(requestURL + "/api/cdc-flow/v1/display"+feature/id, headers = headers)
@@ -255,15 +254,67 @@ def cleanAtlasTags(requestURL, headers):
         if not response.ok:
             logging.error("Failed to delete tag with %d",id)
 
+
+# Clean IPAM and DHCP items from CSP
+def cleanIPAMDHCP(feature, requestURL, headers):
+    storeList = []
+    getResponse = requests.get(requestURL+"/api/ddi/v1/"+feature, headers = headers)
+    if not getResponse.ok :
+        return
+    response = json.loads(getResponse.text)
+    if response.get("results" ):
+        if len(response["results"]) == 0:
+            return
+    response = json.loads(getResponse.text)
+    logging.info(getResponse.text)
+    print(getResponse.text)
+
+    for items in response["results"]:
+        if feature == "/dhcp/fixed_address":
+            storeList.append(items["id"])
+        elif feature == "/dhcp/global":
+            storeList.append(items["id"])
+        elif feature == "/dhcp/ha_group":
+            storeList.append(items["id"])
+        elif feature == "/dhcp/hardware_filter":
+            storeList.append(items["id"])
+        elif feature == "/dhcp/option_code":
+            storeList.append(items["id"])
+        elif feature == "/dhcp/option_filter":
+            storeList.append(items["id"])
+        elif feature == "/dhcp/option_group":
+            storeList.append(items["id"])
+        elif feature == "/dhcp/option_space":
+            storeList.append(items["id"])
+        elif feature == "/dhcp/server":
+            storeList.append(items["id"])
+        elif feature == "/ipam/address":
+            storeList.append(items["id"])
+        elif feature == "/ipam/address_block":
+            storeList.append(items["id"])
+        elif feature == "/ipam/host":
+            storeList.append(items["id"])
+        elif feature == "/ipam/ip_space":
+            storeList.append(items["id"])
+        elif feature == "/ipam/range":
+            storeList.append(items["id"])
+        elif feature == "/ipam/subnet":
+            storeList.append(items["id"])
+
+    logging.info("Deleting id %d for %s", len(storeList), feature)
+    for id in storeList:
+        response = requests.delete(requestURL + "/api/ddi/v1/"+feature/id, headers = headers)
+        if not response.ok:
+            logging.error("Failed to delete %s with %d", feature, id)
+
+
 def main(argv):
     if __name__ == "__main__":
-
         ### Add relevant Auth Token here
         headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Token e75e4a08e2ae81230cc1f9b645b2e2a6',
         }
-
         requestURL = ""
 
         print("Usage:\n <program> <API TOKEN> <CLUSTER URL>")
@@ -282,6 +333,8 @@ def main(argv):
         anycastFeatures = ["ac_configs"]
         notificationFeatures = ["user_alerts", "account_alerts"]
         cdcFlowFeatures = ["sources","destinations", "flows", "etl/filters"]
+        ipamDHCPFeatures = ["/dhcp/fixed_address", "/dhcp/global", "/dhcp/ha_group", "/dhcp/hardware_filter", "/dhcp/option_code", "/dhcp/option_filter",
+                            "/dhcp/option_group", "/dhcp/option_space", "/dhcp/server", "/ipam/address", "/ipam/address_block", "/ipam/host", "/ipam/ip_space", "/ipam/range", "/ipam/subnet"]
 
         for item in atcepFeatures:
             cleanATCEPAPI(item, requestURL, headers)
@@ -304,5 +357,8 @@ def main(argv):
             cleanNotifications(item, requestURL, headers)
 
         cleanAtlasTags(requestURL, headers)
+
+        for item in ipamDHCPFeatures:
+            cleanIPAMDHCP(item, requestURL, headers)
 
 main(sys.argv[1:])
