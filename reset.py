@@ -3,21 +3,13 @@ import string
 import json
 import requests
 import logging
-
-### Add relevant Auth Token here
-headers = {
-    'Content-Type': 'application/json',
-    'Authorization': 'Token e75e4a08e2ae81230cc1f9b645b2e2a6',
-}
-
-### Replace this variable value with the desired Cluster URL
-requestURL = "http://localhost:8040"
+import sys  ##, getopt
 
 data =  {}
 logging.basicConfig(level=logging.INFO)
 
 ## Cleans ATCFW API objects
-def cleanATCFWAPI(feature):
+def cleanATCFWAPI(feature, requestURL, headers):
     storeList = []
     getResponse = requests.get(requestURL+"/api/atcfw/v1/"+feature, headers = headers)
     if not getResponse.ok :
@@ -61,7 +53,7 @@ def cleanATCFWAPI(feature):
         logging.error("Failed to delete %s ", feature)
 
 ## Cleans BloxOne Endpoints objects
-def cleanATCEPAPI(feature):
+def cleanATCEPAPI(feature, requestURL, headers):
     storeList = []
     getResponse = requests.get(requestURL+"/api/atcep/v1/"+feature, headers = headers)
     if not getResponse.ok :
@@ -106,7 +98,7 @@ def cleanATCEPAPI(feature):
             logging.error("Failed to delete the %s ", feature)
 
 ## Cleans Onprem hosts objects
-def cleanOnPremHosts(feature):
+def cleanOnPremHosts(feature, requestURL, headers):
     storeList = []
     getResponse = requests.get(requestURL+"/api/host_app/v1/"+feature, headers = headers)
     if not getResponse.ok :
@@ -130,7 +122,7 @@ def cleanOnPremHosts(feature):
             logging.error("Failed to delete %s : %d", feature, id)
 
 ## Cleans Anycast feature objects
-def cleanAnycast(feature):
+def cleanAnycast(feature, requestURL, headers):
     storeList = []
     getResponse = requests.get(requestURL+"/api/anycast/v1/accm"+feature, headers = headers)
     if not getResponse.ok :
@@ -155,7 +147,7 @@ def cleanAnycast(feature):
             logging.error("Failed to delete Anycast Config %d", id)
 
 # Cleans JOIN Tokens
-def cleanJoinTokens():
+def cleanJoinTokens(requestURL, headers):
         storeList = []
         getResponse = requests.get(requestURL + "/atlas-host-activation/v1/jointoken", headers=headers)
         if not getResponse.ok:
@@ -180,7 +172,7 @@ def cleanJoinTokens():
 
 
 # Cleans CDC Flow
-def cleanCDCFlow(feature):
+def cleanCDCFlow(feature, requestURL, headers):
     storeList = []
     getResponse = requests.get(requestURL+"/api/cdc-flow/v1/display"+feature, headers = headers)
     if not getResponse.ok :
@@ -212,7 +204,7 @@ def cleanCDCFlow(feature):
 
 
 ## Cleans Notifications
-def cleanNotifications(feature):
+def cleanNotifications(feature,requestURL, headers):
     ## feature = user_alerts, account_alerts
     storeList = []
     getResponse = requests.get(requestURL+"/atlas-notifications-mailbox/v1/"+feature, headers = headers)
@@ -241,7 +233,7 @@ def cleanNotifications(feature):
 
 
 # Cleans CDC Flow
-def cleanAtlasTags():
+def cleanAtlasTags(requestURL, headers):
     storeList = []
     getResponse = requests.get(requestURL+"/api/atlas-tagging/v2/tags", headers = headers)
     if not getResponse.ok :
@@ -263,8 +255,26 @@ def cleanAtlasTags():
         if not response.ok:
             logging.error("Failed to delete tag with %d",id)
 
-def main():
+def main(argv):
     if __name__ == "__main__":
+
+        ### Add relevant Auth Token here
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Token e75e4a08e2ae81230cc1f9b645b2e2a6',
+        }
+
+        requestURL = ""
+
+        print("Usage:\n <program> <API TOKEN> <CLUSTER URL>")
+        # logging.INFO("Usage: <program> <API TOKEN> <CLUSTER URL>")
+        print(len(argv))
+        if len(argv) != 2:
+            sys.exit("Not enough arguments in the command line")
+
+        headers['Authorization'] = "Token " + argv[0]
+        requestURL = argv[1]
+
         ## Add more features if necessary
         atcfwFeatures = ["security_policies", "redirect_page", "internal_domain_lists", "named_lists", "custom_redirects", "network_lists", "access_codes", "category_filters"]
         atcepFeatures = ["roaming_device_groups", "roaming_devices"]
@@ -274,25 +284,25 @@ def main():
         cdcFlowFeatures = ["sources","destinations", "flows", "etl/filters"]
 
         for item in atcepFeatures:
-            cleanATCEPAPI(item)
+            cleanATCEPAPI(item, requestURL, headers)
 
         for item in onPremFeatures:
-            cleanOnPremHosts(item)
+            cleanOnPremHosts(item, requestURL,headers)
 
         for item in atcfwFeatures:
-            cleanATCFWAPI(item)
+            cleanATCFWAPI(item, requestURL, headers)
 
-        cleanJoinTokens()
+        cleanJoinTokens(requestURL, headers)
 
         for item in anycastFeatures:
-            cleanAnycast(item)
+            cleanAnycast(item, requestURL, headers)
 
         for item in cdcFlowFeatures:
-            cleanCDCFlow(item)
+            cleanCDCFlow(item, requestURL, headers)
 
         for item in notificationFeatures:
-            cleanNotifications(item)
+            cleanNotifications(item, requestURL, headers)
 
-        cleanAtlasTags()
+        cleanAtlasTags(requestURL, headers)
 
-main()
+main(sys.argv[1:])
